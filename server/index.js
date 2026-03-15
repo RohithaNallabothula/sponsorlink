@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,31 +21,41 @@ app.post('/api/signup', (req, res) => {
   }
 
   const id = newId();
-  // In production, use bcrypt to hash password. Here we store as-is for MVP.
-  db.run(
-    `INSERT INTO users (id, full_name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)`,
-    [id, full_name, email, password, role],
-    function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(409).json({ error: 'Email already registered.' });
+  
+  bcrypt.hash(password, 10, (err, hash) => {
+    if (err) return res.status(500).json({ error: 'Error hashing password.' });
+    
+    db.run(
+      `INSERT INTO users (id, full_name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)`,
+      [id, full_name, email, hash, role],
+      function(err) {
+        if (err) {
+          if (err.message.includes('UNIQUE')) {
+            return res.status(409).json({ error: 'Email already registered.' });
+          }
+          return res.status(500).json({ error: err.message });
         }
-        return res.status(500).json({ error: err.message });
+        res.json({ id, full_name, email, role, onboarded: false });
       }
-      res.json({ id, full_name, email, role, onboarded: false });
-    }
-  );
+    );
+  });
 });
 
 // POST /api/login — Authenticate a user
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
-  db.get(`SELECT * FROM users WHERE email = ? AND password_hash = ?`, [email, password], (err, user) => {
+  
+  db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
 
-    db.run(`UPDATE users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [user.id]);
-    res.json({ id: user.id, full_name: user.full_name, email: user.email, role: user.role });
+    bcrypt.compare(password, user.password_hash, (err, isMatch) => {
+      if (err) return res.status(500).json({ error: 'Error comparing passwords.' });
+      if (!isMatch) return res.status(401).json({ error: 'Invalid email or password.' });
+
+      db.run(`UPDATE users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [user.id]);
+      res.json({ id: user.id, full_name: user.full_name, email: user.email, role: user.role });
+    });
   });
 });
 
