@@ -1,0 +1,52 @@
+:root {
+  /* Design System Colors - Warm Amber + Clementine */
+  --primary: #E8621A;
+  --primary-hover: #D4541A;
+  --primary-light: #FDE8D8;
+  --secondary: #C97B5A;
+  
+  --background: #FDFAF6;
+  --surface: #FFFFFF;
+  --border: #EDE8DF;
+  
+  --text-primary: #1C1812;
+  --text-secondary: #7A6E65;
+  --text-disabled: #B8AFA8;
+  
+  --success: #D97706;
+  --error: #DC4040;
+  
+  /* Spacing & Radii */
+  --spacing-unit: 8px;
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --radius-input: 6px;
+  
+  /* Shadows */
+  --shadow-subtle: 0 2px 8px rgba(28, 24, 18, 0.07);
+  --shadow-hover: 0 4px 12px rgba(28, 24, 18, 0.12);
+  
+  /* Transitions */
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text-primary);
+  margin-top: 0;
+}
+
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-subtle);
+  border-radius: var(--radius-card);
+}

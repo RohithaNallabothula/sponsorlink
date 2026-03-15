@@ -1,0 +1,252 @@
+.add-event-page {
+  padding: 40px 0;
+}
+
+.header-icon {
+  color: var(--primary);
+  margin-right: 12px;
+}
+
+.builder-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  margin-top: 32px;
+}
+
+@media (min-width: 1024px) {
+  .builder-layout {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.builder-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.select-field, .textarea-field {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: var(--transition);
+}
+
+.select-field:focus, .textarea-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1.5px rgba(232, 98, 26, 0.2);
+}
+
+/* Tiers Section */
+.tiers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #FDFBFA;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+}
+
+.section-sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-sub-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.add-tier-link {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.tier-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.tier-row input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-remove:hover {
+  color: var(--error);
+}
+
+/* Age Chips */
+.age-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.age-chip {
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.age-chip.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-submit-event {
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* Preview Column */
+.sticky-preview {
+  position: sticky;
+  top: 120px;
+}
+
+.preview-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.preview-card {
+  box-shadow: 0 10px 30px rgba(28, 24, 18, 0.1);
+}
+
+.preview-img-placeholder {
+  height: 140px;
+  background: linear-gradient(135deg, #FDE8D8 0%, #F5DCC8 100%);
+  position: relative;
+}
+
+.type-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+}
+
+.preview-content {
+  padding: 24px;
+}
+
+.preview-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.preview-org {
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.preview-meta {
+  display: flex;
+  gap: 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.preview-meta span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-amount {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  padding: 12px;
+  background: var(--background);
+  border-radius: 8px;
+}
+
+.amt-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.amt-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.preview-tiers table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.preview-tiers th {
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-tiers td {
+  padding: 8px 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.preview-tiers tr:last-child td {
+  border-bottom: none;
+}
