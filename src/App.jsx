@@ -11,7 +11,13 @@ import Network from './pages/Network/Network';
 import Home from './pages/Home/Home';
 import AddEvent from './pages/AddEvent/AddEvent';
 import Onboarding from './pages/Onboarding/Onboarding';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 import './App.css';
+
+const AdminRoute = ({ children }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.role === 'admin' ? children : <Navigate to="/" />;
+};
 
 function App() {
   return (
@@ -30,6 +36,7 @@ function App() {
             <Route path="/messages" element={<Messages />} />
             <Route path="/add-event" element={<AddEvent />} />
             <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           </Routes>
         </main>
       </div>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { User, Mail, MapPin, Briefcase, Globe, Award, Edit3, Save, X } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -7,29 +8,49 @@ import Badge from '../../components/common/Badge';
 import './Profile.css';
 
 const Profile = () => {
+  const { id } = useParams();
   const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: 'Aryan Sharma',
-    role: 'Event Organizer',
-    email: 'aryan.bits@example.com',
-    location: 'Pilani, Rajasthan',
-    bio: 'Engineering student at BITS Pilani. Passionate about tech innovation and community building.',
-    organization: 'BITS Pilani Technical Society',
-    pastEvents: ['TechX 2025', 'Innovate Rajasthan'],
-    skills: ['Project Management', 'Tech Strategy', 'Sponsorship']
-  });
+  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/users/${id}`);
+        const data = await res.json();
+        setProfileData({
+          name: data.full_name,
+          role: data.role,
+          email: data.email,
+          location: data.city ? `${data.city}, ${data.state}` : 'Not specified',
+          bio: data.bio || 'No bio provided.',
+          organization: data.profile_details?.organization_name || data.profile_details?.company_name || 'Independent',
+          pastEvents: ['TechX 2025', 'Innovate Rajasthan'], // Mock for now
+          skills: ['Project Management', 'Tech Strategy', 'Sponsorship'] // Mock for now
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchUser();
+  }, [id]);
 
   const handleSave = () => {
     setIsEditing(false);
     // In a real app, this would be an API call
   };
 
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading Profile...</div>;
+  if (!profileData) return <div style={{ padding: '2rem', textAlign: 'center' }}>User not found.</div>;
+
   return (
     <div className="profile-container">
       <div className="profile-header-stack">
         <div className="profile-banner glass"></div>
         <div className="profile-info-card">
-          <div className="profile-avatar-large">AS</div>
+          <div className="profile-avatar-large">{profileData.name ? profileData.name.charAt(0).toUpperCase() : '?'}</div>
           <div className="profile-main-info">
             <div className="profile-name-section">
               <h1>{profileData.name}</h1>

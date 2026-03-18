@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, Briefcase } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import Card from '../../components/common/Card';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
 import './Auth.css';
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -16,27 +13,23 @@ const Login = () => {
     }
   }, [navigate]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch('http://localhost:5000/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ credential: credentialResponse.credential })
       });
       const data = await response.json();
       if (data.id) {
         localStorage.setItem('user', JSON.stringify(data));
         navigate('/dashboard');
       } else {
-        alert(data.error || 'Invalid credentials.');
+        alert(data.error || 'Google login failed.');
       }
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('Google login failed:', err);
+      alert('Server error during Google login.');
     }
   };
 
@@ -49,36 +42,18 @@ const Login = () => {
         </div>
         
         <Card title="Welcome Back">
-          <form onSubmit={handleSubmit} className="auth-form">
-            <Input
-              label="Email Address"
-              type="email"
-              name="email"
-              placeholder="name@company.com"
-              value={formData.email}
-              onChange={handleChange}
-              icon={Mail}
-              required
-            />
-            <Input
-              label="Password"
-              type="password"
-              name="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              icon={Lock}
-              required
-            />
-            <div className="auth-actions-row">
-              <label className="remember-me-chk">
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
-              <a href="#" className="forgot-link">Forgot password?</a>
+          <div className="auth-form">
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => alert('Google authentication failed.')}
+                theme="outline"
+                shape="rectangular"
+                text="signin_with"
+                size="large"
+              />
             </div>
-            <Button type="submit" variant="primary" className="full-width">Sign In</Button>
-          </form>
+          </div>
           
           <div className="auth-footer-text">
             <p>Don't have an account? <Link to="/signup">Create one for free</Link></p>

@@ -1,9 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+require('dotenv').config();
+const { OAuth2Client } = require('google-auth-library');
 const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 app.use(cors());
 app.use(express.json());
@@ -13,50 +18,68 @@ const newId = () => crypto.randomBytes(16).toString('hex');
 
 // ─── AUTH ROUTES ─────────────────────────────────────────────────────────────
 
-// POST /api/signup — Create a new user
-app.post('/api/signup', (req, res) => {
-  const { full_name, email, password, role } = req.body;
-  if (!full_name || !email || !password || !role) {
-    return res.status(400).json({ error: 'full_name, email, password, and role are required.' });
+// ─── AUTH ROUTES ─────────────────────────────────────────────────────────────
+
+// POST /api/auth/google — Authenticate via Google
+app.post('/api/auth/google', async (req, res) => {
+  const { credential, role } = req.body;
+  if (!credential) {
+    return res.status(400).json({ error: 'Google credential is required.' });
   }
 
-  const id = newId();
-  
-  bcrypt.hash(password, 10, (err, hash) => {
-    if (err) return res.status(500).json({ error: 'Error hashing password.' });
-    
-    db.run(
-      `INSERT INTO users (id, full_name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)`,
-      [id, full_name, email, hash, role],
-      function(err) {
-        if (err) {
-          if (err.message.includes('UNIQUE')) {
-            return res.status(409).json({ error: 'Email already registered.' });
-          }
-          return res.status(500).json({ error: err.message });
-        }
-        res.json({ id, full_name, email, role, onboarded: false });
-      }
-    );
-  });
-});
-
-// POST /api/login — Authenticate a user
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
-
-    bcrypt.compare(password, user.password_hash, (err, isMatch) => {
-      if (err) return res.status(500).json({ error: 'Error comparing passwords.' });
-      if (!isMatch) return res.status(401).json({ error: 'Invalid email or password.' });
-
-      db.run(`UPDATE users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [user.id]);
-      res.json({ id: user.id, full_name: user.full_name, email: user.email, role: user.role });
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
-  });
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const full_name = payload.name;
+
+    db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const isAdmin = email.toLowerCase() === 'nallabothularohitha@gmail.com';
+      let finalRole = isAdmin ? 'admin' : role;
+
+      if (user) {
+        if (isAdmin && user.role !== 'admin') {
+          db.run(`UPDATE users SET role = 'admin', last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [user.id]);
+          return res.json({ id: user.id, full_name: user.full_name, email: user.email, role: 'admin' });
+        } else {
+          db.run(`UPDATE users SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [user.id]);
+          return res.json({ id: user.id, full_name: user.full_name, email: user.email, role: user.role });
+        }
+      } else {
+        if (!finalRole) {
+          return res.status(401).json({ error: 'Account not found. Please sign up first.' });
+        }
+        
+        const id = newId();
+        const randomPassword = crypto.randomBytes(32).toString('hex');
+        bcrypt.hash(randomPassword, 10, (err, hash) => {
+          if (err) return res.status(500).json({ error: 'Error hashing password.' });
+          
+          db.run(
+            `INSERT INTO users (id, full_name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)`,
+            [id, full_name, email, hash, finalRole],
+            function(err) {
+              if (err) {
+                if (err.message.includes('UNIQUE')) {
+                  return res.status(409).json({ error: 'Email already registered.' });
+                }
+                return res.status(500).json({ error: err.message });
+              }
+              res.json({ id, full_name, email, role: finalRole, onboarded: false });
+            }
+          );
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error verifying Google token:', error);
+    res.status(401).json({ error: 'Invalid Google token.' });
+  }
 });
 
 // ─── ONBOARDING / PROFILE ROUTES ─────────────────────────────────────────────
@@ -297,6 +320,84 @@ app.get('/api/users', (req, res) => {
   db.all(query, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
+  });
+});
+
+// GET /api/users/:id — Get specific user profile
+app.get('/api/users/:id', (req, res) => {
+  db.get(`SELECT id, full_name, email, role, bio, city, state, phone_number, created_at FROM users WHERE id = ?`, [req.params.id], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Fetch associated sub-profile
+    if (user.role === 'organizer') {
+      db.get(`SELECT * FROM organizer_profiles WHERE user_id = ?`, [user.id], (err, profile) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ...user, profile_details: profile || {} });
+      });
+    } else if (user.role === 'sponsor') {
+      db.get(`SELECT * FROM sponsor_profiles WHERE user_id = ?`, [user.id], (err, profile) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ...user, profile_details: profile || {} });
+      });
+    } else {
+      res.json(user);
+    }
+  });
+});
+
+// POST /api/users — Admin manually create a user
+app.post('/api/users', async (req, res) => {
+  const { full_name, email, role } = req.body;
+  if (!full_name || !email || !role) {
+    return res.status(400).json({ error: 'full_name, email, and role are required.' });
+  }
+
+  const id = newId();
+  try {
+    const hash = await bcrypt.hash(email + id, 10); // generate dummy password hash
+    
+    db.run(
+      `INSERT INTO users (id, full_name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)`,
+      [id, full_name, email, hash, role],
+      function(err) {
+        if (err) {
+          if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'An account with this email already exists.' });
+          }
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, id, full_name, email, role });
+      }
+    );
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/users/:id — Setup for Admin to update user basic info
+app.put('/api/users/:id', (req, res) => {
+  const { full_name, role } = req.body;
+  if (!full_name || !role) {
+    return res.status(400).json({ error: 'full_name and role are required.' });
+  }
+
+  db.run(
+    `UPDATE users SET full_name = ?, role = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`,
+    [full_name, role, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// DELETE /api/users/:id — Setup for Admin to delete user
+app.delete('/api/users/:id', (req, res) => {
+  // Simplistic approach, normally you'd delete related rows logically or have CASCADE ON DELETE in DB schema. For now we delete the user.
+  db.run(`DELETE FROM users WHERE id = ?`, [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
   });
 });
 

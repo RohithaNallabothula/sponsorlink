@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
-import { MessageSquare, User, Users, LogOut, Link2, Plus, Search, Bell } from 'lucide-react';
+import { MessageSquare, User, Users, LogOut, Link2, Plus, Search, Bell, Shield } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -42,6 +42,12 @@ const Navbar = () => {
       <div className="navbar-links">
         {user && (
           <>
+            {user.role === 'admin' && (
+              <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+                <Shield size={20} />
+                <span>Admin</span>
+              </NavLink>
+            )}
             <NavLink to="/discovery" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
               <Search size={20} />
               <span>Discovery</span>
@@ -60,6 +66,10 @@ const Navbar = () => {
             <NavLink to="/add-event" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
               <Plus size={20} />
               <span>Add Event</span>
+            </NavLink>
+            <NavLink to={`/profile/${user.id}`} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+              <User size={20} />
+              <span>Profile</span>
             </NavLink>
           </>
         )}

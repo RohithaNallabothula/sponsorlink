@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Users, Calendar, TrendingUp, Search, Sliders } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Input from '../../components/common/Input';
-import AddEventForm from '../../components/layout/AddEventForm';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('events');
-  const [showAddEvent, setShowAddEvent] = useState(false);
   const [events, setEvents] = useState([]);
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,15 +51,9 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="header-actions">
-          <Button variant="primary" icon={Plus} onClick={() => setShowAddEvent(true)}>Create Event</Button>
+          <Button variant="primary" icon={Plus} onClick={() => navigate('/add-event')}>Create Event</Button>
         </div>
       </header>
-
-      {showAddEvent && (
-        <AddEventForm
-          onClose={() => { setShowAddEvent(false); fetchData(); }}
-        />
-      )}
 
       <div className="dashboard-stats">
         <Card className="stat-card" hover={false}>
